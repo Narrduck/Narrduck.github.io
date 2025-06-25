@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rhythmus-Merktraining</title>
+  <style>
+    :root {
+      --accent: #1e88e5;
+      --bg: #fafafa;
+      --text: #333;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      flex-direction: row;
+    }
+
+    #sidebar {
+      width: 300px;
+      background: #fff;
+      border-right: 1px solid #ddd;
+      padding: 20px;
+      overflow-y: auto;
+      transition: transform 0.3s ease-in-out;
+    }
+
+    #sidebar h2 {
+      margin-top: 0;
+    }
+
+    #gapForm {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px 12px;
+      font-size: 0.95em;
+    }
+
+    #gapForm span {
+      align-self: center;
+    }
+
+    #gapForm input {
+      width: 60px;
+      padding: 4px 6px;
+      font-size: 0.95em;
+    }
+
+    #main {
+      flex: 1;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 1rem;
+      margin-bottom: 30px;
+    }
+
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 24px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin: 10px;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #1565c0;
+    }
+
+    .feedback-buttons {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .feedback-buttons button {
+      min-width: 120px;
+    }
+
+    #status {
+      margin-top: 30px;
+      font-size: 1.1em;
+      white-space: pre-line;
+    }
+
+    #menuToggle {
+      display: none;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      font-size: 16px;
+      border-radius: 4px;
+      z-index: 10;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+
+      #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        transform: translateX(-100%);
+        z-index: 9;
+        box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
+      }
+
+      #sidebar.open {
+        transform: translateX(0);
+      }
+
+      #menuToggle {
+        display: block;
+      }
+
+      #main {
+        padding-top: 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button id="menuToggle" onclick="toggleSidebar()">☰ Menü</button>
+
+  <div id="sidebar">
+    <h2>Pausenlänge (in Takten)</h2>
+    <form id="gapForm"></form>
+  </div>
+
+  <div id="main">
+    <h1>Rhythmus-Merktraining</h1>
+    <p>Klicke auf „Start“, um einen Rhythmus zu hören. Versuche während der Pause im Takt zu bleiben!</p>
+    <button onclick="startTraining()">▶ Start</button>
+    <div id="status"></div>
+    <div class="feedback-buttons">
+      <button onclick="handleResult(true)">✅ Geklappt</button>
+      <button onclick="handleResult(false)">❌ Nicht geklappt</button>
+    </div>
+  </div>
+
+  <script>
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+
+    const dances = {
+      "Cha Cha": [110, 130],
+      "Rumba": [90, 104],
+      "Jive": [160, 184],
+      "Paso Doble": [112, 124],
+      "Samba": [96, 104],
+      "Langsamer Walzer": [84, 90],
+      "Wiener Walzer": [174, 180],
+      "Quickstep": [192, 208],
+      "Slowfox": [112, 120],
+      "Tango": [120, 132]
+    };
+
+    function getBeatsPerBar(dance) {
+      return dance.includes("Walzer") ? 3 : 4;
+    }
+
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? parseInt(match[2]) : null;
+    }
+
+    function setCookie(name, value) {
+      document.cookie = `${name}=${value}; path=/; max-age=31536000`;
+    }
+
+    const gapForm = document.getElementById("gapForm");
+    for (const dance in dances) {
+      const val = getCookie(`gap_${dance}`) || 4;
+
+      const span = document.createElement("span");
+      span.textContent = dance;
+
+      const input = document.createElement("input");
+      input.type = "number";
+      input.min = "1";
+      input.value = val;
+      input.dataset.dance = dance;
+
+      gapForm.appendChild(span);
+      gapForm.appendChild(input);
+    }
+
+    gapForm.addEventListener("change", (e) => {
+      if (e.target.tagName === "INPUT") {
+        const dance = e.target.dataset.dance;
+        setCookie(`gap_${dance}`, Math.max(1, parseInt(e.target.value)));
+      }
+    });
+
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("open");
+    }
+
+    let intervalId = null;
+    let currentDance = null;
+    let currentTacts = 4;
+    let currentBPM = 120;
+
+    function startTraining() {
+      if (intervalId) clearInterval(intervalId);
+
+      const danceNames = Object.keys(dances);
+      currentDance = danceNames[Math.floor(Math.random() * danceNames.length)];
+      const [minBPM, maxBPM] = dances[currentDance];
+      currentBPM = Math.floor(Math.random() * (maxBPM - minBPM + 1)) + minBPM;
+      const intervalMs = (60 / currentBPM) * 1000;
+      const beatsPerBar = getBeatsPerBar(currentDance);
+      currentTacts = getCookie(`gap_${currentDance}`) || 4;
+
+      document.getElementById("status").innerText =
+        `Tanz: ${currentDance} @ ${currentBPM} BPM\n▶ Spielt...`;
+
+      let beatCount = 0;
+      let state = "playing";
+
+      function playClick() {
+        if (state !== "playing") return;
+        const isAccent = beatCount % beatsPerBar === 0;
+
+        const osc = context.createOscillator();
+        const gain = context.createGain();
+        osc.frequency.setValueAtTime(isAccent ? 880 : 440, context.currentTime);
+        gain.gain.setValueAtTime(1, context.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(context.destination);
+        osc.start();
+        osc.stop(context.currentTime + 0.1);
+
+        beatCount++;
+      }
+
+      intervalId = setInterval(playClick, intervalMs);
+
+      setTimeout(() => {
+        state = "silent";
+        document.getElementById("status").innerText =
+          `Tanz: ${currentDance} @ ${currentBPM} BPM\n🤫 Pause – im Takt bleiben!`;
+      }, 4000);
+
+      setTimeout(() => {
+        state = "playing";
+        document.getElementById("status").innerText =
+          `Tanz: ${currentDance} @ ${currentBPM} BPM\n🎵 Weiter – noch im Takt?`;
+      }, 4000 + currentTacts * beatsPerBar * intervalMs);
+    }
+
+    function handleResult(success) {
+      if (!currentDance) return;
+
+      const key = `gap_${currentDance}`;
+      let currentGap = getCookie(key) || 4;
+
+      currentGap = success ? currentGap + 1 : Math.max(1, currentGap - 1);
+      setCookie(key, currentGap);
+
+      const input = document.querySelector(`input[data-dance="${currentDance}"]`);
+      if (input) input.value = currentGap;
+
+      alert(`${currentDance}: neue Pausenlänge = ${currentGap} Takte`);
+    }
+  </script>
+</body>
+</html>
