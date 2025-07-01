@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Ballroom Emotion Trainer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .emotion-box {
+      font-size: 2rem;
+      padding: 2rem;
+      border: 2px dashed #6c757d;
+      border-radius: 0.5rem;
+      margin-top: 2rem;
+      text-align: center;
+      min-height: 100px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <h1 class="text-center mb-4">🎭 Ballroom Emotion Trainer</h1>
+
+    <div id="phase-man" class="text-center">
+      <button class="btn btn-primary btn-lg" onclick="showManEmotion()">Emotion für den Herrn zeigen</button>
+      <div id="man-emotion" class="emotion-box mt-4 d-none"></div>
+      <button id="to-woman-btn" class="btn btn-secondary mt-4 d-none" onclick="showWomanPhase()">Weiter zur Dame</button>
+    </div>
+
+    <div id="phase-woman" class="text-center d-none">
+      <button id="woman-btn" class="btn btn-danger btn-lg" onclick="showWomanEmotion()">Emotion für die Dame zeigen</button>
+      <div id="woman-emotion" class="emotion-box mt-4 d-none"></div>
+      <button id="to-both-btn" class="btn btn-secondary mt-4 d-none" onclick="showBothEmotions()">Beide Emotionen anzeigen</button>
+    </div>
+
+    <div id="phase-both" class="text-center d-none">
+      <h3 class="mb-3">🕺💃 Eure Emotionen:</h3>
+      <div class="emotion-box">
+        <strong>Herr:</strong> <span id="final-man"></span><br>
+        <strong>Dame:</strong> <span id="final-woman"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const manEmotions = [
+      "Stolz", "Selbstvertrauen", "Dominanz", "Kontrolle", "Leidenschaft", "Konzentration", "Kraft", "Führung",
+      "Sehnsucht", "Geheimnis", "Eleganz", "Beherrschung", "Entschlossenheit", "Schutz", "Würde", "Energie",
+      "Gelassenheit", "Überlegenheit", "Abenteuerlust", "Herausforderung", "Wagemut", "Achtsamkeit", "Verletzlichkeit",
+      "Humor", "Romantik", "Melancholie", "Verführung", "Freude", "Zartheit", "Dankbarkeit"
+    ];
+
+    const womanEmotions = [
+      "Anmut", "Hingabe", "Zärtlichkeit", "Vertrauen", "Leidenschaft", "Freude", "Stolz", "Sehnsucht", "Verspieltheit",
+      "Romantik", "Geheimnis", "Verletzlichkeit", "Eleganz", "Entschlossenheit", "Sinnlichkeit", "Hoffnung", "Stärke",
+      "Selbstbewusstsein", "Traurigkeit", "Verführung", "Faszination", "Ruhe", "Empathie", "Neugier", "Genuss",
+      "Erfüllung", "Überraschung", "Wut", "Dankbarkeit", "Frieden"
+    ];
+
+    let manEmotion = "";
+    let womanEmotion = "";
+
+    function getRandomEmotion(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function showManEmotion() {
+      manEmotion = getRandomEmotion(manEmotions);
+      document.getElementById("man-emotion").textContent = manEmotion;
+      document.getElementById("man-emotion").classList.remove("d-none");
+      document.getElementById("to-woman-btn").classList.remove("d-none");
+    }
+
+    function showWomanPhase() {
+      document.getElementById("phase-man").classList.add("d-none");
+      document.getElementById("phase-woman").classList.remove("d-none");
+    }
+
+    function showWomanEmotion() {
+      womanEmotion = getRandomEmotion(womanEmotions);
+      document.getElementById("woman-emotion").textContent = womanEmotion;
+      document.getElementById("woman-emotion").classList.remove("d-none");
+      document.getElementById("woman-btn").classList.add("d-none");
+      document.getElementById("to-both-btn").classList.remove("d-none");
+    }
+
+    function showBothEmotions() {
+      document.getElementById("phase-woman").classList.add("d-none");
+      document.getElementById("final-man").textContent = manEmotion;
+      document.getElementById("final-woman").textContent = womanEmotion;
+      document.getElementById("phase-both").classList.remove("d-none");
+    }
+  </script>
+</body>
+</html>
+
